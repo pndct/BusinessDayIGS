@@ -707,8 +707,8 @@ export default function App() {
             ❝
           </div>
           <p className="text-sm italic leading-relaxed text-gray-200">
-            "Pedagang yang jujur dan terpercaya akan dikumpulkan bersama para
-            nabi, orang-orang shiddiq, dan orang-orang yang mati syahid."
+            "Pedagang yang jujur dan amanah akan dikumpulkan bersama para nabi,
+            orang-orang shiddiq, dan syuhada."
           </p>
           <p className="text-xs font-bold text-purple-300 mt-3 text-right">
             - HR. Tirmidzi
