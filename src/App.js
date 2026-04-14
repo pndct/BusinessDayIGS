@@ -2131,7 +2131,7 @@ export default function App() {
               </h1>
               {!activeAdmin && (
                 <p className="text-xs text-purple-100 font-medium">
-                  Bazar Siswa Kreatif
+                  PO - Bazar Siswa Kreatif
                 </p>
               )}
             </div>
