@@ -1944,6 +1944,25 @@ export default function App() {
         >
           {isSubmitting ? "..." : "Kirim Pesanan"}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            // 1. Reset keranjang/pembelian (asumsi state Anda bernama 'cart' atau 'items')
+            // Sesuaikan fungsi reset-nya dengan fungsi yang Anda miliki (misal: setCart({}))
+            if (
+              window.confirm("Apakah Anda yakin ingin membatalkan pesanan?")
+            ) {
+              // 1. Kosongkan keranjang belanja
+              setCart({});
+
+              // 2. Kembali ke tampilan menu utama (landing)
+              setView("menu");
+            }
+          }}
+          className="w-full mt-2 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold transition-colors duration-200 hover:bg-red-600 hover:text-white"
+        >
+          Batal
+        </button>
       </form>
     </div>
   );
