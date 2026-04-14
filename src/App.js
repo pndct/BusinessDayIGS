@@ -79,18 +79,18 @@ const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
 
 // --- KONFIGURASI ADMIN ---
 const STAND_ADMINS = [
-  { username: "admin1", password: "kelas1", name: "Admin Stand 1" },
-  { username: "admin2", password: "kelas2", name: "Admin Stand 2" },
-  { username: "admin3", password: "kelas3", name: "Admin Stand 3" },
-  { username: "admin4", password: "kelas4", name: "Admin Stand 4" },
-  { username: "admin5", password: "kelas5", name: "Admin Stand 5" },
-  { username: "admin6", password: "kelas6", name: "Admin Stand 6" },
+  { username: "admin1", password: "kelas1", name: "Admin Kelas 1" },
+  { username: "admin2", password: "kelas2", name: "Admin Kelas 2" },
+  { username: "admin3", password: "kelas3", name: "Admin Kelas 3" },
+  { username: "admin4", password: "kelas4", name: "Admin Kelas 4" },
+  { username: "admin5", password: "kelas5", name: "Admin Kelas 5" },
+  { username: "admin6", password: "kelas6", name: "Admin Kelas 6" },
 ];
 
 const GENERAL_ADMIN = {
   username: "admin",
   password: "adminIGS2",
-  name: "Admin General (Kepala)",
+  name: "Admin General",
 };
 
 // --- DATA INITIAL SEEDING ---
@@ -698,7 +698,7 @@ export default function App() {
             IGS Business Day
           </h1>
           <p className="text-lg text-purple-200 mt-2 font-light">
-            Bazar Siswa Kreatif
+            Pre Order - Bazar Siswa Kreatif
           </p>
         </div>
 
