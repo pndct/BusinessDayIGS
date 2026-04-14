@@ -1717,7 +1717,7 @@ export default function App() {
     <div className="max-w-md mx-auto p-4 space-y-6 pt-6">
       <div className="bg-white/40 p-4 rounded-2xl shadow-xl border border-white/50">
         <h3 className="font-bold text-purple-900 mb-2 border-b pb-2">
-          Ringkasan
+          Ringkasan Pembelian
         </h3>
         {Object.values(cart).map((i) => (
           <div key={i.id} className="flex justify-between text-sm py-1">
