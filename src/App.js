@@ -97,7 +97,7 @@ const GENERAL_ADMIN = {
 };
 
 // --- DATA INITIAL SEEDING ---
-const INITIAL_CLASSES_DATA = Array.from({ length: 12 }, (_, i) => ({
+const INITIAL_CLASSES_DATA = Array.from({ length: 20 }, (_, i) => ({
   id: `class_${i + 1}`,
   name: `Kelas ${i + 1}`,
   order: i + 1,
