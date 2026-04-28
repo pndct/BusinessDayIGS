@@ -81,12 +81,12 @@ const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
 
 // --- KONFIGURASI ADMIN ---
 const STAND_ADMINS = [
-  { username: "admin1", password: "kelas1", name: "Admin Stand 1" },
-  { username: "admin2", password: "kelas2", name: "Admin Stand 2" },
-  { username: "admin3", password: "kelas3", name: "Admin Stand 3" },
-  { username: "admin4", password: "kelas4", name: "Admin Stand 4" },
-  { username: "admin5", password: "kelas5", name: "Admin Stand 5" },
-  { username: "admin6", password: "kelas6", name: "Admin Stand 6" },
+  { username: "admin1", password: "kelas1", name: "Admin Kelas 1" },
+  { username: "admin2", password: "kelas2", name: "Admin Kelas 2" },
+  { username: "admin3", password: "kelas3", name: "Admin Kelas 3" },
+  { username: "admin4", password: "kelas4", name: "Admin Kelas 4" },
+  { username: "admin5", password: "kelas5", name: "Admin Kelas 5" },
+  { username: "admin6", password: "kelas6", name: "Admin Kelas 6" },
 ];
 
 const GENERAL_ADMIN = {
@@ -776,7 +776,9 @@ export default function App() {
           <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
-        <p className="text-xs text-white/30 mt-8">© 2025 Indo Global School</p>
+        <p className="text-xs text-white/30 mt-8">
+          © 2025 Islamic Global School
+        </p>
       </div>
     </div>
   );
@@ -1761,7 +1763,7 @@ export default function App() {
           <div className="bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl space-y-4">
             <div className="text-center border-b pb-4 border-slate-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Total Pendapatan Saya
+                Total Pendapatan Kelas
               </p>
               <h2 className="text-3xl font-extrabold text-green-600 mt-1">
                 {formatRupiah(totalRevenue)}
