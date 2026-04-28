@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ShoppingCart,
   ChefHat,
@@ -44,6 +44,7 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
+  DownloadCloud,
 } from "lucide-react";
 import { initializeApp } from "firebase/app";
 import {
@@ -96,7 +97,7 @@ const GENERAL_ADMIN = {
 };
 
 // --- DATA INITIAL SEEDING ---
-const INITIAL_CLASSES_DATA = Array.from({ length: 20 }, (_, i) => ({
+const INITIAL_CLASSES_DATA = Array.from({ length: 12 }, (_, i) => ({
   id: `class_${i + 1}`,
   name: `Kelas ${i + 1}`,
   order: i + 1,
@@ -107,6 +108,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState({});
   const [view, setView] = useState("landing");
+  const invoiceRef = useRef(null);
 
   // Checkout State
   const [orderType, setOrderType] = useState("siswa");
@@ -171,11 +173,18 @@ export default function App() {
   const [previewImage, setPreviewImage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- AUTO-LOAD TAILWIND ---
+  // --- AUTO-LOAD TAILWIND & HTML2CANVAS ---
   useEffect(() => {
     if (!document.querySelector('script[src*="tailwindcss"]')) {
       const script = document.createElement("script");
       script.src = "https://cdn.tailwindcss.com";
+      script.async = true;
+      document.head.appendChild(script);
+    }
+    if (!document.querySelector('script[src*="html2canvas"]')) {
+      const script = document.createElement("script");
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
       script.async = true;
       document.head.appendChild(script);
     }
@@ -314,6 +323,32 @@ export default function App() {
       console.error("Gagal menyalin", err);
     }
     document.body.removeChild(textArea);
+  };
+
+  // --- FUNGSI DOWNLOAD STRUK (GAMBAR) ---
+  const handleDownloadInvoice = async () => {
+    if (!invoiceRef.current) return;
+    try {
+      if (!window.html2canvas) {
+        alert(
+          "Sistem sedang memuat pembuat gambar, silakan tunggu beberapa detik dan coba lagi."
+        );
+        return;
+      }
+      const canvas = await window.html2canvas(invoiceRef.current, {
+        backgroundColor: "#ffffff", // Background putih
+        scale: 2, // Kualitas resolusi tinggi
+        useCORS: true, // Untuk memastikan gambar luar tidak error
+      });
+      const image = canvas.toDataURL("image/png", 1.0);
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `Struk_Pesanan_IGS_${lastOrderInfo?.id || "Unknown"}.png`;
+      link.click();
+    } catch (err) {
+      console.error("Gagal mendownload struk:", err);
+      alert("Gagal mendownload struk.");
+    }
   };
 
   // --- FUNGSI DOWNLOAD EXCEL (XLS) ---
@@ -776,9 +811,7 @@ export default function App() {
           <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
-        <p className="text-xs text-white/30 mt-8">
-          © 2025 Islamic Global School
-        </p>
+        <p className="text-xs text-white/30 mt-8">© 2025 Indo Global School</p>
       </div>
     </div>
   );
@@ -2334,75 +2367,87 @@ export default function App() {
 
             {/* KARTU INVOICE / STRUK */}
             {lastOrderInfo && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 shadow-inner relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-purple-500"></div>
-                <p className="text-center text-xs font-bold text-gray-500 tracking-widest mb-2">
-                  INVOICE #{lastOrderInfo.id}
-                </p>
-                <div className="space-y-1 mb-4 border-b border-dashed border-gray-300 pb-3 text-sm">
-                  <p className="flex justify-between">
-                    <span className="text-gray-500">Pemesan:</span>{" "}
-                    <span className="font-bold text-gray-800">
-                      {lastOrderInfo.customer.name}
-                    </span>
+              <div ref={invoiceRef} className="bg-white p-2 -mx-2 mb-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-inner relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-purple-500"></div>
+                  <p className="text-center text-xs font-bold text-gray-500 tracking-widest mb-2">
+                    INVOICE #{lastOrderInfo.id}
                   </p>
-                  <p className="flex justify-between">
-                    <span className="text-gray-500">Kelas/Unit:</span>{" "}
-                    <span className="font-bold text-gray-800">
-                      {lastOrderInfo.customer.table}
-                    </span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span className="text-gray-500">Waktu:</span>{" "}
-                    <span className="text-gray-800">
-                      {lastOrderInfo.date.toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span className="text-gray-500">Metode:</span>{" "}
-                    <span className="font-bold text-gray-800">
-                      {lastOrderInfo.customer.payment === "transfer"
-                        ? "Transfer BSI"
-                        : "Cash"}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="space-y-2 mb-4 text-sm">
-                  {lastOrderInfo.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between">
+                  <div className="space-y-1 mb-4 border-b border-dashed border-gray-300 pb-3 text-sm">
+                    <p className="flex justify-between">
+                      <span className="text-gray-500">Pemesan:</span>{" "}
+                      <span className="font-bold text-gray-800">
+                        {lastOrderInfo.customer.name}
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-gray-500">Kelas/Unit:</span>{" "}
+                      <span className="font-bold text-gray-800">
+                        {lastOrderInfo.customer.table}
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-gray-500">Waktu:</span>{" "}
                       <span className="text-gray-800">
-                        <span className="font-bold">{item.qty}x</span>{" "}
-                        {item.name}
+                        {lastOrderInfo.date.toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
-                      <span className="font-medium text-gray-800">
-                        {formatRupiah(item.price * item.qty)}
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-gray-500">Metode:</span>{" "}
+                      <span className="font-bold text-gray-800">
+                        {lastOrderInfo.customer.payment === "transfer"
+                          ? "Transfer BSI"
+                          : "Cash"}
                       </span>
-                    </div>
-                  ))}
-                </div>
+                    </p>
+                  </div>
 
-                <div className="border-t border-dashed border-gray-300 pt-3 flex justify-between items-center">
-                  <span className="font-bold text-gray-800">TOTAL</span>
-                  <span className="font-extrabold text-purple-700 text-lg">
-                    {formatRupiah(lastOrderInfo.totalPrice)}
-                  </span>
+                  <div className="space-y-2 mb-4 text-sm">
+                    {lastOrderInfo.items.map((item, idx) => (
+                      <div key={idx} className="flex justify-between">
+                        <span className="text-gray-800">
+                          <span className="font-bold">{item.qty}x</span>{" "}
+                          {item.name}
+                        </span>
+                        <span className="font-medium text-gray-800">
+                          {formatRupiah(item.price * item.qty)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-dashed border-gray-300 pt-3 flex justify-between items-center">
+                    <span className="font-bold text-gray-800">TOTAL</span>
+                    <span className="font-extrabold text-purple-700 text-lg">
+                      {formatRupiah(lastOrderInfo.totalPrice)}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
 
-            <button
-              onClick={() => {
-                setView("menu");
-                setLastOrderInfo(null);
-              }}
-              className="w-full bg-purple-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-purple-900 transition"
-            >
-              Kembali ke Menu
-            </button>
+            <div className="flex flex-col gap-2">
+              {lastOrderInfo && (
+                <button
+                  onClick={handleDownloadInvoice}
+                  className="w-full bg-indigo-100 text-indigo-700 px-6 py-3 rounded-xl font-bold shadow-sm hover:bg-indigo-200 transition flex justify-center items-center gap-2"
+                >
+                  <DownloadCloud className="w-5 h-5" /> Download Struk (PNG)
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setView("menu");
+                  setLastOrderInfo(null);
+                }}
+                className="w-full bg-purple-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-purple-900 transition"
+              >
+                Kembali ke Menu
+              </button>
+            </div>
           </div>
         </div>
       )}
