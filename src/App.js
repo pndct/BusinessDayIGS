@@ -9,7 +9,6 @@ import {
   Trash2,
   CheckCircle,
   ArrowLeft,
-  ArrowRight,
   Send,
   Lock,
   Clock,
@@ -42,6 +41,9 @@ import {
   PieChart,
   Copy,
   Download,
+  ArrowRight,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { initializeApp } from "firebase/app";
 import {
@@ -79,18 +81,18 @@ const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
 
 // --- KONFIGURASI ADMIN ---
 const STAND_ADMINS = [
-  { username: "admin1", password: "kelas1", name: "Admin Kelas 1" },
-  { username: "admin2", password: "kelas2", name: "Admin Kelas 2" },
-  { username: "admin3", password: "kelas3", name: "Admin Kelas 3" },
-  { username: "admin4", password: "kelas4", name: "Admin Kelas 4" },
-  { username: "admin5", password: "kelas5", name: "Admin Kelas 5" },
-  { username: "admin6", password: "kelas6", name: "Admin Kelas 6" },
+  { username: "admin1", password: "kelas1", name: "Admin Stand 1" },
+  { username: "admin2", password: "kelas2", name: "Admin Stand 2" },
+  { username: "admin3", password: "kelas3", name: "Admin Stand 3" },
+  { username: "admin4", password: "kelas4", name: "Admin Stand 4" },
+  { username: "admin5", password: "kelas5", name: "Admin Stand 5" },
+  { username: "admin6", password: "kelas6", name: "Admin Stand 6" },
 ];
 
 const GENERAL_ADMIN = {
   username: "admin",
   password: "adminIGS2",
-  name: "Admin General",
+  name: "Admin General (Kepala)",
 };
 
 // --- DATA INITIAL SEEDING ---
@@ -104,7 +106,7 @@ const INITIAL_CLASSES_DATA = Array.from({ length: 20 }, (_, i) => ({
 export default function App() {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState({});
-  const [view, setView] = useState("landing"); // START FROM LANDING PAGE
+  const [view, setView] = useState("landing");
 
   // Checkout State
   const [orderType, setOrderType] = useState("siswa");
@@ -115,6 +117,9 @@ export default function App() {
   const [orderNotes, setOrderNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [transferProof, setTransferProof] = useState(null);
+
+  // Invoice State
+  const [lastOrderInfo, setLastOrderInfo] = useState(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -156,9 +161,15 @@ export default function App() {
   const [tempClassName, setTempClassName] = useState("");
   const [expandedClassId, setExpandedClassId] = useState(null);
 
+  // STATE IMPORT MASSAL
+  const [bulkStudentNames, setBulkStudentNames] = useState("");
+  const [showBulkFormId, setShowBulkFormId] = useState(null);
+  const [isBulkImporting, setIsBulkImporting] = useState(false);
+
   // UI State
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // --- AUTO-LOAD TAILWIND ---
   useEffect(() => {
@@ -198,10 +209,6 @@ export default function App() {
       try {
         const parsedAdmin = JSON.parse(storedAdmin);
         setActiveAdmin(parsedAdmin);
-        if (parsedAdmin.role === "general") {
-          // Stay on landing or redirect based on preference, here we let them choose via landing page
-          // But to be consistent with "Persistent Login", we might want to let them see the admin button later
-        }
       } catch (e) {
         console.error("Gagal memuat sesi admin", e);
         localStorage.removeItem("igs_admin_session");
@@ -221,8 +228,8 @@ export default function App() {
       (s) => {
         const data = s.docs.map((d) => ({ id: d.id, ...d.data() }));
         data.sort((a, b) => {
-          const doneA = a.items?.every((i) => i.status === "completed");
-          const doneB = b.items?.every((i) => i.status === "completed");
+          const doneA = (a.items || []).every((i) => i.status === "completed");
+          const doneB = (b.items || []).every((i) => i.status === "completed");
           if (doneA === doneB)
             return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
           return doneA ? 1 : -1;
@@ -242,7 +249,7 @@ export default function App() {
       collection(db, "artifacts", appId, "public", "data", "students"),
       (s) => {
         const data = s.docs.map((d) => ({ id: d.id, ...d.data() }));
-        data.sort((a, b) => a.name.localeCompare(b.name));
+        data.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         setStudents(data);
       }
     );
@@ -274,12 +281,15 @@ export default function App() {
   };
 
   const getTotalPrice = () =>
-    Object.values(cart).reduce(
-      (total, item) => total + item.price * item.qty,
+    Object.values(cart || {}).reduce(
+      (total, item) => total + (item.price || 0) * (item.qty || 0),
       0
     );
   const getTotalItems = () =>
-    Object.values(cart).reduce((total, item) => total + item.qty, 0);
+    Object.values(cart || {}).reduce(
+      (total, item) => total + (item.qty || 0),
+      0
+    );
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -306,141 +316,137 @@ export default function App() {
     document.body.removeChild(textArea);
   };
 
-  // --- FUNGSI DOWNLOAD EXCEL (XLS MULTI-SHEET PER STAND) ---
+  // --- FUNGSI DOWNLOAD EXCEL (XLS) ---
   const downloadReport = () => {
-    if (orders.length === 0)
+    if (!orders || orders.length === 0)
       return alert("Belum ada data pesanan untuk didownload.");
-
-    // 1. Group Data berdasarkan Stand (item.owner)
     const groupedByStand = {};
-
-    // Inisialisasi array untuk setiap stand agar sheet terbentuk meskipun kosong
     STAND_ADMINS.forEach((admin) => {
       groupedByStand[admin.name] = [];
     });
-
-    // Tambahkan array untuk "Lainnya" jika ada produk tanpa owner jelas
     groupedByStand["Lainnya"] = [];
 
-    orders.forEach((order) => {
-      // Flatten order items menjadi baris-baris data
-      order.items.forEach((item) => {
+    (orders || []).forEach((order) => {
+      (order.items || []).forEach((item) => {
         const standName =
           STAND_ADMINS.find((a) => a.username === item.owner)?.name ||
           "Lainnya";
         const date = order.createdAt?.seconds
           ? new Date(order.createdAt.seconds * 1000)
           : new Date();
-
         groupedByStand[standName].push({
           date: date.toLocaleDateString("id-ID"),
-          name: order.customer.name,
-          classUnit: order.customer.table, // Menampilkan Kelas/Unit Pembeli
-          product: item.name,
-          price: item.price,
-          qty: item.qty,
-          total: item.price * item.qty,
-          payment: order.customer.payment === "transfer" ? "Transfer" : "Cash",
+          name: order.customer?.name || "-",
+          classUnit: order.customer?.table || "-",
+          product: item.name || "-",
+          price: item.price || 0,
+          qty: item.qty || 0,
+          total: (item.price || 0) * (item.qty || 0),
+          payment: order.customer?.payment === "transfer" ? "Transfer" : "Cash",
         });
       });
     });
 
-    // Hapus kategori "Lainnya" jika kosong
-    if (groupedByStand["Lainnya"].length === 0) {
+    if (groupedByStand["Lainnya"]?.length === 0) {
       delete groupedByStand["Lainnya"];
     }
 
-    // 2. Buat Konten XML Excel (SpreadsheetML)
-    let xmlContent = `<?xml version="1.0"?>
-    <?mso-application progid="Excel.Sheet"?>
-    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-     xmlns:o="urn:schemas-microsoft-com:office:office"
-     xmlns:x="urn:schemas-microsoft-com:office:excel"
-     xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
-     xmlns:html="http://www.w3.org/TR/REC-html40">`;
+    const xmlHeader1 = '<?xml version="1.0"?>';
+    const xmlHeader2 = '<?mso-application progid="Excel.Sheet"?>';
 
-    const escapeXml = (unsafe) => {
-      return unsafe.toString().replace(/[<>&'"]/g, function (c) {
-        switch (c) {
-          case "<":
-            return "&lt;";
-          case ">":
-            return "&gt;";
-          case "&":
-            return "&amp;";
-          case "'":
-            return "&apos;";
-          case '"':
-            return "&quot;";
-        }
-      });
-    };
+    let xmlContent = `${xmlHeader1}\n${xmlHeader2}\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">`;
 
-    // 3. Loop setiap group untuk membuat Worksheet (Sheet Per Stand)
+    const escapeXml = (unsafe) =>
+      unsafe
+        ? unsafe.toString().replace(
+            /[<>&'"]/g,
+            (c) =>
+              ({
+                "<": "&lt;",
+                ">": "&gt;",
+                "&": "&amp;",
+                "'": "&apos;",
+                '"': "&quot;",
+              }[c])
+          )
+        : "";
+
     Object.keys(groupedByStand)
       .sort()
       .forEach((sheetName) => {
-        const rows = groupedByStand[sheetName];
+        const rows = groupedByStand[sheetName] || [];
         let totalOmset = 0;
         const safeSheetName = escapeXml(sheetName.substring(0, 31));
 
-        xmlContent += `<Worksheet ss:Name="${safeSheetName}">
-        <Table>
-          <Column ss:Width="80"/>
-          <Column ss:Width="120"/>
-          <Column ss:Width="100"/>
-          <Column ss:Width="150"/>
-          <Column ss:Width="80"/>
-          <Column ss:Width="40"/>
-          <Column ss:Width="80"/>
-          <Column ss:Width="80"/>
-          
-          <Row>
-            <Cell><Data ss:Type="String">Tanggal</Data></Cell>
-            <Cell><Data ss:Type="String">Nama Pemesan</Data></Cell>
-            <Cell><Data ss:Type="String">Kelas/Unit</Data></Cell>
-            <Cell><Data ss:Type="String">Produk</Data></Cell>
-            <Cell><Data ss:Type="String">Harga</Data></Cell>
-            <Cell><Data ss:Type="String">Qty</Data></Cell>
-            <Cell><Data ss:Type="String">Total</Data></Cell>
-            <Cell><Data ss:Type="String">Metode</Data></Cell>
-          </Row>`;
+        xmlContent += `<Worksheet ss:Name="${safeSheetName}"><Table><Column ss:Width="80"/><Column ss:Width="120"/><Column ss:Width="100"/><Column ss:Width="150"/><Column ss:Width="80"/><Column ss:Width="40"/><Column ss:Width="80"/><Column ss:Width="80"/><Row><Cell><Data ss:Type="String">Tanggal</Data></Cell><Cell><Data ss:Type="String">Nama Pemesan</Data></Cell><Cell><Data ss:Type="String">Kelas/Unit</Data></Cell><Cell><Data ss:Type="String">Produk</Data></Cell><Cell><Data ss:Type="String">Harga</Data></Cell><Cell><Data ss:Type="String">Qty</Data></Cell><Cell><Data ss:Type="String">Total</Data></Cell><Cell><Data ss:Type="String">Metode</Data></Cell></Row>`;
 
         rows.forEach((row) => {
           totalOmset += row.total;
-          xmlContent += `<Row>
-          <Cell><Data ss:Type="String">${row.date}</Data></Cell>
-          <Cell><Data ss:Type="String">${escapeXml(row.name)}</Data></Cell>
-          <Cell><Data ss:Type="String">${escapeXml(row.classUnit)}</Data></Cell>
-          <Cell><Data ss:Type="String">${escapeXml(row.product)}</Data></Cell>
-          <Cell><Data ss:Type="Number">${row.price}</Data></Cell>
-          <Cell><Data ss:Type="Number">${row.qty}</Data></Cell>
-          <Cell><Data ss:Type="Number">${row.total}</Data></Cell>
-          <Cell><Data ss:Type="String">${row.payment}</Data></Cell>
-        </Row>`;
+          xmlContent += `<Row><Cell><Data ss:Type="String">${
+            row.date
+          }</Data></Cell><Cell><Data ss:Type="String">${escapeXml(
+            row.name
+          )}</Data></Cell><Cell><Data ss:Type="String">${escapeXml(
+            row.classUnit
+          )}</Data></Cell><Cell><Data ss:Type="String">${escapeXml(
+            row.product
+          )}</Data></Cell><Cell><Data ss:Type="Number">${
+            row.price
+          }</Data></Cell><Cell><Data ss:Type="Number">${
+            row.qty
+          }</Data></Cell><Cell><Data ss:Type="Number">${
+            row.total
+          }</Data></Cell><Cell><Data ss:Type="String">${
+            row.payment
+          }</Data></Cell></Row>`;
         });
-
-        // Footer Total Per Sheet
-        xmlContent += `<Row>
-        <Cell ss:Index="6"><Data ss:Type="String">TOTAL OMSET:</Data></Cell>
-        <Cell><Data ss:Type="Number">${totalOmset}</Data></Cell>
-      </Row>`;
-
-        xmlContent += `</Table></Worksheet>`;
+        xmlContent += `<Row><Cell ss:Index="6"><Data ss:Type="String">TOTAL OMSET:</Data></Cell><Cell><Data ss:Type="Number">${totalOmset}</Data></Cell></Row></Table></Worksheet>`;
       });
-
     xmlContent += `</Workbook>`;
 
-    // 4. Download File
     const blob = new Blob([xmlContent], { type: "application/vnd.ms-excel" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
     const today = new Date().toISOString().split("T")[0];
-    link.setAttribute("download", `Laporan_Keuangan_PerStand_IGS_${today}.xls`); // Ekstensi .xls agar dikenali sebagai Excel
+    link.setAttribute("download", `Laporan_Keuangan_PerStand_IGS_${today}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // --- FUNGSI IMPORT MASSAL SISWA ---
+  const handleBulkAddStudents = async (e, classId) => {
+    e.preventDefault();
+    if (!bulkStudentNames || !bulkStudentNames.trim()) return;
+
+    setIsBulkImporting(true);
+    const namesArray = bulkStudentNames
+      .split("\n")
+      .map((n) => n.trim())
+      .filter((n) => n !== "");
+
+    try {
+      const promises = namesArray.map((name) => {
+        return addDoc(
+          collection(db, "artifacts", appId, "public", "data", "students"),
+          {
+            name: name,
+            classId: classId,
+            createdAt: serverTimestamp(),
+          }
+        );
+      });
+      await Promise.all(promises);
+      setBulkStudentNames("");
+      setShowBulkFormId(null);
+      alert(`Berhasil mengimpor ${namesArray.length} siswa!`);
+    } catch (error) {
+      console.error("Error bulk import:", error);
+      alert("Gagal mengimpor data. Coba lagi. Detail: " + error.message);
+    } finally {
+      setIsBulkImporting(false);
+    }
   };
 
   const handleSubmitOrder = async (e) => {
@@ -454,7 +460,7 @@ export default function App() {
 
     setIsSubmitting(true);
     const className =
-      classes.find((c) => c.id === selectedClassId)?.name || "Kelas ?";
+      (classes || []).find((c) => c.id === selectedClassId)?.name || "Kelas ?";
     const finalCustomer = {
       type: orderType,
       name: orderType === "siswa" ? selectedStudent : teacherName,
@@ -473,17 +479,26 @@ export default function App() {
         "data",
         "orders"
       );
-      const cartItems = Object.values(cart).map((i) => ({
+      const cartItems = Object.values(cart || {}).map((i) => ({
         ...i,
         status: "pending",
       }));
-      await addDoc(orderRef, {
+      const docRef = await addDoc(orderRef, {
         customer: finalCustomer,
         items: cartItems,
         totalPrice: getTotalPrice(),
         status: "pending",
         createdAt: serverTimestamp(),
         userId: user.uid,
+      });
+
+      // SIMPAN DATA INVOICE UNTUK DITAMPILKAN DI HALAMAN SUCCESS
+      setLastOrderInfo({
+        id: docRef.id.slice(0, 6).toUpperCase(),
+        customer: finalCustomer,
+        items: cartItems,
+        totalPrice: getTotalPrice(),
+        date: new Date(),
       });
 
       cartItems.forEach(async (item) => {
@@ -507,7 +522,7 @@ export default function App() {
       setOrderNotes("");
       setTransferProof(null);
     } catch (err) {
-      alert("Gagal pesan.");
+      alert("Gagal pesan. Detail: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -549,13 +564,21 @@ export default function App() {
   };
 
   const seedInitialClasses = async () => {
-    if (classes.length > 0) return;
-    for (const cls of INITIAL_CLASSES_DATA)
-      await setDoc(
-        doc(db, "artifacts", appId, "public", "data", "classes", cls.id),
-        { name: cls.name, order: cls.order, isActive: true }
+    if (!classes || classes.length > 0) return;
+    try {
+      for (const cls of INITIAL_CLASSES_DATA) {
+        await setDoc(
+          doc(db, "artifacts", appId, "public", "data", "classes", cls.id),
+          { name: cls.name, order: cls.order, isActive: true }
+        );
+      }
+      alert("Kelas berhasil dibuat!");
+    } catch (error) {
+      alert(
+        "Gagal membuat data kelas. Pastikan Firebase Rules Anda sudah mengizinkan penulisan. Detail: " +
+          error.message
       );
-    alert("Kelas dibuat!");
+    }
   };
 
   const handleUpdateClassStatus = async (classId, currentStatus) => {
@@ -566,7 +589,7 @@ export default function App() {
         { isActive: newStatus }
       );
     } catch (error) {
-      alert("Gagal update status kelas");
+      alert("Gagal update status kelas. Detail: " + error.message);
     }
   };
 
@@ -603,15 +626,20 @@ export default function App() {
       setIsEditingProduct(false);
       resetProductForm();
     } catch (error) {
-      alert("Gagal menyimpan produk");
+      alert("Gagal menyimpan produk. Detail: " + error.message);
     }
   };
 
   const handleDeleteProduct = async (id) => {
-    if (confirm("Hapus produk?"))
-      await deleteDoc(
-        doc(db, "artifacts", appId, "public", "data", "products", id)
-      );
+    if (confirm("Hapus produk?")) {
+      try {
+        await deleteDoc(
+          doc(db, "artifacts", appId, "public", "data", "products", id)
+        );
+      } catch (error) {
+        alert("Gagal menghapus produk. Detail: " + error.message);
+      }
+    }
   };
 
   const resetProductForm = () => {
@@ -627,21 +655,43 @@ export default function App() {
   };
 
   const toggleItemStatus = async (orderId, orderItems, itemIndex) => {
-    const newItems = [...orderItems];
+    const newItems = [...(orderItems || [])];
+    if (!newItems[itemIndex]) return;
     const currentStatus = newItems[itemIndex].status || "pending";
     newItems[itemIndex].status =
       currentStatus === "completed" ? "pending" : "completed";
-    await updateDoc(
-      doc(db, "artifacts", appId, "public", "data", "orders", orderId),
-      { items: newItems }
-    );
+    try {
+      await updateDoc(
+        doc(db, "artifacts", appId, "public", "data", "orders", orderId),
+        { items: newItems }
+      );
+    } catch (error) {
+      alert("Gagal mengupdate status item. Detail: " + error.message);
+    }
   };
 
   const deleteOrder = async (id) => {
-    if (confirm("Hapus pesanan permanen?"))
-      await deleteDoc(
-        doc(db, "artifacts", appId, "public", "data", "orders", id)
-      );
+    if (confirm("Hapus pesanan permanen?")) {
+      try {
+        await deleteDoc(
+          doc(db, "artifacts", appId, "public", "data", "orders", id)
+        );
+      } catch (error) {
+        alert("Gagal menghapus pesanan. Detail: " + error.message);
+      }
+    }
+  };
+
+  const handleDeleteStudent = async (id) => {
+    if (confirm("Hapus data siswa ini?")) {
+      try {
+        await deleteDoc(
+          doc(db, "artifacts", appId, "public", "data", "students", id)
+        );
+      } catch (error) {
+        alert("Gagal menghapus siswa. Detail: " + error.message);
+      }
+    }
   };
 
   const formatRupiah = (n) =>
@@ -649,27 +699,28 @@ export default function App() {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
-    }).format(n);
+    }).format(n || 0);
   const getAdminProducts = () =>
-    products.filter((p) => p.owner === activeAdmin?.username);
+    (products || []).filter((p) => p.owner === activeAdmin?.username);
   const getStudentsByClassId = (clsId) =>
-    students.filter((s) => s.classId === clsId);
+    (students || []).filter((s) => s.classId === clsId);
 
-  // --- REPORTING LOGIC ---
   const calculateStandRevenue = (adminUsername) => {
     let totalRevenue = 0;
     let productSales = {};
 
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
+    (orders || []).forEach((order) => {
+      (order.items || []).forEach((item) => {
         if (item.owner === adminUsername) {
-          const revenue = item.price * item.qty;
+          const revenue = (item.price || 0) * (item.qty || 0);
           totalRevenue += revenue;
-          if (!productSales[item.name]) {
-            productSales[item.name] = { qty: 0, revenue: 0 };
+          if (item.name) {
+            if (!productSales[item.name]) {
+              productSales[item.name] = { qty: 0, revenue: 0 };
+            }
+            productSales[item.name].qty += item.qty || 0;
+            productSales[item.name].revenue += revenue;
           }
-          productSales[item.name].qty += item.qty;
-          productSales[item.name].revenue += revenue;
         }
       });
     });
@@ -677,11 +728,10 @@ export default function App() {
     return { totalRevenue, productSales };
   };
 
-  // --- VIEW RENDERS (DEFINED INSIDE COMPONENT TO ACCESS STATE & FUNCTIONS) ---
+  // --- VIEW RENDERS ---
 
   const renderLanding = () => (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-black flex flex-col items-center justify-center p-6 text-white relative overflow-hidden">
-      {/* Decorative Circles */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-purple-600 rounded-full blur-3xl opacity-30 animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-indigo-600 rounded-full blur-3xl opacity-30 animate-pulse delay-1000"></div>
 
@@ -698,7 +748,7 @@ export default function App() {
             IGS Business Day
           </h1>
           <p className="text-lg text-purple-200 mt-2 font-light">
-            Pre Order - Bazar Siswa Kreatif
+            Bazar Siswa Kreatif
           </p>
         </div>
 
@@ -726,9 +776,7 @@ export default function App() {
           <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
-        <p className="text-xs text-white/30 mt-8">
-          © 2025 Islamic Global School
-        </p>
+        <p className="text-xs text-white/30 mt-8">© 2025 Indo Global School</p>
       </div>
     </div>
   );
@@ -761,18 +809,33 @@ export default function App() {
             className="w-full px-4 py-2 rounded-xl bg-white/40 border border-white/30 text-white placeholder-white/70 outline-none"
             placeholder="Username"
           />
-          <input
-            type="password"
-            value={adminCredentials.password}
-            onChange={(e) =>
-              setAdminCredentials({
-                ...adminCredentials,
-                password: e.target.value,
-              })
-            }
-            className="w-full px-4 py-2 rounded-xl bg-white/40 border border-white/30 text-white placeholder-white/70 outline-none"
-            placeholder="Password"
-          />
+
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={adminCredentials.password}
+              onChange={(e) =>
+                setAdminCredentials({
+                  ...adminCredentials,
+                  password: e.target.value,
+                })
+              }
+              className="w-full px-4 py-2 rounded-xl bg-white/40 border border-white/30 text-white placeholder-white/70 outline-none pr-10"
+              placeholder="Password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+
           {adminError && (
             <div className="text-red-200 text-sm text-center font-bold">
               {adminError}
@@ -833,7 +896,7 @@ export default function App() {
 
         {generalAdminTab === "students" && (
           <div className="space-y-3">
-            {classes.length === 0 && (
+            {(!classes || classes.length === 0) && (
               <button
                 onClick={seedInitialClasses}
                 className="bg-orange-600 text-white px-4 py-2 rounded w-full"
@@ -841,8 +904,8 @@ export default function App() {
                 Buat Data Kelas Awal
               </button>
             )}
-            {classes.map((cls) => {
-              const classStudents = getStudentsByClassId(cls.id);
+            {(classes || []).map((cls) => {
+              const classStudents = getStudentsByClassId(cls.id) || [];
               const isExp = expandedClassId === cls.id;
               const isEdit = editingClassId === cls.id;
               const isActive = cls.isActive !== false;
@@ -874,19 +937,23 @@ export default function App() {
                           />
                           <button
                             onClick={async () => {
-                              await updateDoc(
-                                doc(
-                                  db,
-                                  "artifacts",
-                                  appId,
-                                  "public",
-                                  "data",
-                                  "classes",
-                                  cls.id
-                                ),
-                                { name: tempClassName }
-                              );
-                              setEditingClassId(null);
+                              try {
+                                await updateDoc(
+                                  doc(
+                                    db,
+                                    "artifacts",
+                                    appId,
+                                    "public",
+                                    "data",
+                                    "classes",
+                                    cls.id
+                                  ),
+                                  { name: tempClassName }
+                                );
+                                setEditingClassId(null);
+                              } catch (e) {
+                                alert("Gagal edit kelas: " + e.message);
+                              }
                             }}
                             className="bg-green-500 text-white p-1 rounded"
                           >
@@ -953,6 +1020,7 @@ export default function App() {
                       </div>
                     </div>
                   </div>
+
                   {isExp && (
                     <div className="p-3 bg-slate-50 border-t">
                       <div className="space-y-2 mb-4">
@@ -979,39 +1047,89 @@ export default function App() {
                           ))
                         )}
                       </div>
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!newStudentName) return;
-                          await addDoc(
-                            collection(
-                              db,
-                              "artifacts",
-                              appId,
-                              "public",
-                              "data",
-                              "students"
-                            ),
-                            {
-                              name: newStudentName,
-                              classId: cls.id,
-                              createdAt: serverTimestamp(),
+
+                      <div className="flex flex-col gap-2 mt-2 border-t border-slate-200 pt-3">
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!newStudentName) return;
+                            try {
+                              await addDoc(
+                                collection(
+                                  db,
+                                  "artifacts",
+                                  appId,
+                                  "public",
+                                  "data",
+                                  "students"
+                                ),
+                                {
+                                  name: newStudentName,
+                                  classId: cls.id,
+                                  createdAt: serverTimestamp(),
+                                }
+                              );
+                              setNewStudentName("");
+                            } catch (err) {
+                              alert("Gagal menambah siswa: " + err.message);
                             }
-                          );
-                          setNewStudentName("");
-                        }}
-                        className="flex gap-2 mt-2"
-                      >
-                        <input
-                          value={newStudentName}
-                          onChange={(e) => setNewStudentName(e.target.value)}
-                          placeholder="Nama Siswa"
-                          className="flex-1 p-2 text-sm border rounded"
-                        />
-                        <button className="bg-purple-600 text-white p-2 rounded">
-                          <Plus className="w-4 h-4" />
+                          }}
+                          className="flex gap-2"
+                        >
+                          <input
+                            value={newStudentName}
+                            onChange={(e) => setNewStudentName(e.target.value)}
+                            placeholder="Nama Siswa"
+                            className="flex-1 p-2 text-sm border rounded"
+                          />
+                          <button className="bg-purple-600 text-white p-2 rounded">
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </form>
+
+                        <button
+                          onClick={() =>
+                            setShowBulkFormId(
+                              showBulkFormId === cls.id ? null : cls.id
+                            )
+                          }
+                          className="text-xs text-purple-600 font-bold self-start hover:underline mt-1"
+                        >
+                          {showBulkFormId === cls.id
+                            ? "- Tutup Impor Massal"
+                            : "+ Impor Massal (Copas dari Excel)"}
                         </button>
-                      </form>
+
+                        {showBulkFormId === cls.id && (
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 animate-fade-in mt-1">
+                            <label className="block text-xs font-bold text-purple-800 mb-1">
+                              Paste daftar nama siswa ke bawah (1 baris 1 nama):
+                            </label>
+                            <textarea
+                              rows="4"
+                              className="w-full p-2 text-sm border border-purple-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+                              placeholder="Budi&#10;Andi&#10;Siti..."
+                              value={bulkStudentNames}
+                              onChange={(e) =>
+                                setBulkStudentNames(e.target.value)
+                              }
+                            />
+                            <button
+                              onClick={(e) => handleBulkAddStudents(e, cls.id)}
+                              disabled={
+                                isBulkImporting ||
+                                !bulkStudentNames ||
+                                !bulkStudentNames.trim()
+                              }
+                              className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 rounded transition disabled:opacity-50"
+                            >
+                              {isBulkImporting
+                                ? "Memproses..."
+                                : "Simpan Semua Siswa"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1022,16 +1140,16 @@ export default function App() {
 
         {generalAdminTab === "orders" && (
           <div className="space-y-4">
-            {orders.length === 0 ? (
+            {!orders || orders.length === 0 ? (
               <p className="text-center text-slate-500 py-10">
                 Belum ada pesanan masuk.
               </p>
             ) : (
-              orders.map((order) => {
-                const allDone = order.items?.every(
+              (orders || []).map((order) => {
+                const allDone = (order.items || []).every(
                   (i) => i.status === "completed"
                 );
-                const isGuru = order.customer.type === "guru";
+                const isGuru = order.customer?.type === "guru";
 
                 let cardStyle = "bg-white border-slate-200";
                 if (allDone) {
@@ -1057,7 +1175,7 @@ export default function App() {
                           ) : (
                             <User className="w-4 h-4" />
                           )}
-                          {order.customer.name}
+                          {order.customer?.name}
                         </h3>
                         <div className="text-xs text-slate-500 mt-1 flex gap-2">
                           <span
@@ -1067,7 +1185,7 @@ export default function App() {
                                 : "bg-slate-200 text-slate-700"
                             }`}
                           >
-                            {order.customer.table}
+                            {order.customer?.table}
                           </span>
                           <span>
                             {order.createdAt?.seconds
@@ -1077,7 +1195,7 @@ export default function App() {
                               : "-"}
                           </span>
                         </div>
-                        {order.customer.payment && (
+                        {order.customer?.payment && (
                           <div
                             className={`mt-1 text-xs font-bold px-2 py-0.5 rounded w-fit flex items-center gap-1 ${
                               order.customer.payment === "transfer"
@@ -1096,7 +1214,7 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        {order.customer.transferProof && (
+                        {order.customer?.transferProof && (
                           <p
                             onClick={() =>
                               setPreviewImage(order.customer.transferProof)
@@ -1128,7 +1246,7 @@ export default function App() {
                       </button>
                     </div>
                     <div className="bg-slate-50 rounded-lg p-2 text-sm space-y-2 border border-slate-100">
-                      {order.items.map((item, idx) => (
+                      {(order.items || []).map((item, idx) => (
                         <div
                           key={idx}
                           className="flex justify-between items-center p-2 rounded"
@@ -1147,7 +1265,7 @@ export default function App() {
                           </span>
                         </div>
                       ))}
-                      {order.customer.notes && (
+                      {order.customer?.notes && (
                         <div className="text-xs text-orange-600 italic border-t border-slate-200 pt-1">
                           "{order.customer.notes}"
                         </div>
@@ -1168,7 +1286,7 @@ export default function App() {
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-6 text-white shadow-lg relative">
               <p className="text-slate-400 text-sm font-medium mb-1">
-                Total Pendapatan PO Semua Kelas
+                Total Omset Acara
               </p>
               <h2 className="text-3xl font-bold tracking-tight">
                 {formatRupiah(grandTotalRevenue)}
@@ -1177,7 +1295,6 @@ export default function App() {
                 Update Realtime
               </p>
 
-              {/* DOWNLOAD EXCEL BUTTON (UPDATED: MULTI-SHEET PER STAND) */}
               <button
                 onClick={downloadReport}
                 className="absolute top-6 right-6 bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg shadow-lg transition flex items-center gap-2 text-sm font-bold"
@@ -1189,12 +1306,13 @@ export default function App() {
             </div>
 
             <h3 className="font-bold text-slate-800 mt-6 mb-2 flex items-center gap-2">
-              <PieChart className="w-5 h-5" /> Rincian Per Kelas
+              <PieChart className="w-5 h-5" /> Rincian Per Stand
             </h3>
 
             <div className="space-y-3">
-              {standReports.map((report) => {
+              {(standReports || []).map((report) => {
                 const isExpanded = expandedReportId === report.username;
+                const salesKeys = Object.keys(report.productSales || {});
                 return (
                   <div
                     key={report.username}
@@ -1213,8 +1331,7 @@ export default function App() {
                           {report.name}
                         </h4>
                         <p className="text-xs text-slate-500 mt-0.5">
-                          {Object.keys(report.productSales).length} Produk
-                          Terjual
+                          {salesKeys.length} Produk Terjual
                         </p>
                       </div>
                       <div className="text-right">
@@ -1242,8 +1359,7 @@ export default function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {Object.entries(report.productSales).length ===
-                            0 ? (
+                            {salesKeys.length === 0 ? (
                               <tr>
                                 <td
                                   colSpan="3"
@@ -1253,7 +1369,7 @@ export default function App() {
                                 </td>
                               </tr>
                             ) : (
-                              Object.entries(report.productSales).map(
+                              Object.entries(report.productSales || {}).map(
                                 ([prodName, data]) => (
                                   <tr
                                     key={prodName}
@@ -1288,8 +1404,9 @@ export default function App() {
 
   const renderStandAdmin = () => {
     const { totalRevenue, productSales } = calculateStandRevenue(
-      activeAdmin.username
+      activeAdmin?.username
     );
+    const salesKeys = Object.keys(productSales || {});
 
     return (
       <div className="max-w-md mx-auto p-4 pb-24 pt-6">
@@ -1328,17 +1445,17 @@ export default function App() {
 
         {adminTab === "orders" && (
           <div className="space-y-4">
-            {orders.length === 0 ? (
+            {!orders || orders.length === 0 ? (
               <div className="text-center py-10 text-white/80">
                 <ChefHat className="w-16 h-16 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">Belum ada pesanan.</p>
               </div>
             ) : (
-              orders.map((order) => {
-                const allDone = order.items?.every(
+              (orders || []).map((order) => {
+                const allDone = (order.items || []).every(
                   (i) => i.status === "completed"
                 );
-                const isGuru = order.customer.type === "guru";
+                const isGuru = order.customer?.type === "guru";
 
                 let cardStyle = "bg-white/90 border-white/50";
                 if (allDone) {
@@ -1364,7 +1481,7 @@ export default function App() {
                           ) : (
                             <User className="w-4 h-4" />
                           )}
-                          {order.customer.name}
+                          {order.customer?.name}
                         </h3>
                         <div className="text-xs text-gray-600 mt-1 flex gap-2">
                           <span
@@ -1374,7 +1491,7 @@ export default function App() {
                                 : "bg-purple-100 text-purple-800"
                             }`}
                           >
-                            {order.customer.table}
+                            {order.customer?.table}
                           </span>
                           <span>
                             {order.createdAt?.seconds
@@ -1384,7 +1501,7 @@ export default function App() {
                               : "-"}
                           </span>
                         </div>
-                        {order.customer.payment && (
+                        {order.customer?.payment && (
                           <div
                             className={`mt-1 text-xs font-bold px-2 py-0.5 rounded w-fit flex items-center gap-1 ${
                               order.customer.payment === "transfer"
@@ -1403,7 +1520,7 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        {order.customer.transferProof && (
+                        {order.customer?.transferProof && (
                           <p
                             onClick={() =>
                               setPreviewImage(order.customer.transferProof)
@@ -1416,8 +1533,8 @@ export default function App() {
                       </div>
                     </div>
                     <div className="bg-white/50 rounded-lg p-2 text-sm space-y-2">
-                      {order.items.map((item, idx) => {
-                        const isMine = item.owner === activeAdmin.username;
+                      {(order.items || []).map((item, idx) => {
+                        const isMine = item.owner === activeAdmin?.username;
                         const done = item.status === "completed";
                         return (
                           <div
@@ -1432,7 +1549,7 @@ export default function App() {
                             {isMine && (
                               <button
                                 onClick={async () => {
-                                  const newItems = [...order.items];
+                                  const newItems = [...(order.items || [])];
                                   newItems[idx].status = done
                                     ? "pending"
                                     : "completed";
@@ -1461,7 +1578,7 @@ export default function App() {
                           </div>
                         );
                       })}
-                      {order.customer.notes && (
+                      {order.customer?.notes && (
                         <div className="text-xs text-orange-600 italic border-t pt-1">
                           "{order.customer.notes}"
                         </div>
@@ -1631,22 +1748,7 @@ export default function App() {
                   >
                     <Edit2 className="w-4 h-4 text-blue-600" />
                   </button>
-                  <button
-                    onClick={() =>
-                      confirm("Hapus?") &&
-                      deleteDoc(
-                        doc(
-                          db,
-                          "artifacts",
-                          appId,
-                          "public",
-                          "data",
-                          "products",
-                          p.id
-                        )
-                      )
-                    }
-                  >
+                  <button onClick={() => handleDeleteProduct(p.id)}>
                     <Trash2 className="w-4 h-4 text-red-600" />
                   </button>
                 </div>
@@ -1659,7 +1761,7 @@ export default function App() {
           <div className="bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl space-y-4">
             <div className="text-center border-b pb-4 border-slate-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Total Pendapatan Kelas
+                Total Pendapatan Saya
               </p>
               <h2 className="text-3xl font-extrabold text-green-600 mt-1">
                 {formatRupiah(totalRevenue)}
@@ -1680,7 +1782,7 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(productSales).length === 0 ? (
+                    {salesKeys.length === 0 ? (
                       <tr>
                         <td
                           colSpan="3"
@@ -1690,7 +1792,7 @@ export default function App() {
                         </td>
                       </tr>
                     ) : (
-                      Object.entries(productSales).map(([name, data]) => (
+                      Object.entries(productSales || {}).map(([name, data]) => (
                         <tr
                           key={name}
                           className="border-b border-gray-50 last:border-0 hover:bg-gray-50"
@@ -1717,14 +1819,16 @@ export default function App() {
     <div className="max-w-md mx-auto p-4 space-y-6 pt-6">
       <div className="bg-white/40 p-4 rounded-2xl shadow-xl border border-white/50">
         <h3 className="font-bold text-purple-900 mb-2 border-b pb-2">
-          Ringkasan Pembelian
+          Ringkasan
         </h3>
-        {Object.values(cart).map((i) => (
+        {Object.values(cart || {}).map((i) => (
           <div key={i.id} className="flex justify-between text-sm py-1">
             <span>
               {i.qty}x {i.name}
             </span>
-            <span className="font-bold">{formatRupiah(i.price * i.qty)}</span>
+            <span className="font-bold">
+              {formatRupiah((i.price || 0) * (i.qty || 0))}
+            </span>
           </div>
         ))}
         <div className="mt-2 pt-2 border-t flex justify-between font-bold text-purple-900">
@@ -1771,7 +1875,7 @@ export default function App() {
               className="w-full p-2 rounded-xl bg-white/60"
             >
               <option value="">-- Pilih Kelas --</option>
-              {classes
+              {(classes || [])
                 .filter((c) => c.isActive !== false)
                 .map((c) => (
                   <option key={c.id} value={c.id}>
@@ -1938,31 +2042,39 @@ export default function App() {
           )}
         </div>
 
-        <button
-          disabled={isSubmitting}
-          className="w-full bg-purple-800 text-white py-3 rounded-xl font-bold shadow-lg"
-        >
-          {isSubmitting ? "..." : "Kirim Pesanan"}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            // 1. Reset keranjang/pembelian (asumsi state Anda bernama 'cart' atau 'items')
-            // Sesuaikan fungsi reset-nya dengan fungsi yang Anda miliki (misal: setCart({}))
-            if (
-              window.confirm("Apakah Anda yakin ingin membatalkan pesanan?")
-            ) {
-              // 1. Kosongkan keranjang belanja
-              setCart({});
-
-              // 2. Kembali ke tampilan menu utama (landing)
-              setView("menu");
-            }
-          }}
-          className="w-full mt-2 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold transition-colors duration-200 hover:bg-red-600 hover:text-white"
-        >
-          Batal
-        </button>
+        {/* TOMBOL CHECKOUT (DIPERBARUI) */}
+        <div className="flex flex-col gap-3 mt-6">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-purple-800 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-purple-900 transition flex justify-center items-center gap-2"
+          >
+            {isSubmitting ? (
+              "Memproses..."
+            ) : (
+              <>
+                <Send className="w-5 h-5" /> Kirim Pesanan
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Yakin ingin membatalkan pesanan dan mengosongkan keranjang?"
+                )
+              ) {
+                setCart({});
+                setView("menu");
+              }
+            }}
+            className="w-full bg-white/60 text-red-600 border border-red-300 py-3 rounded-xl font-bold shadow-sm hover:bg-red-50 transition"
+          >
+            Batal
+          </button>
+        </div>
       </form>
     </div>
   );
@@ -1971,13 +2083,13 @@ export default function App() {
     const filtered =
       activeCategory === "all"
         ? products
-        : products.filter((p) => p.category === activeCategory);
+        : (products || []).filter((p) => p.category === activeCategory);
     return (
       <div className="max-w-md mx-auto p-4 space-y-4 pb-24 pt-6">
-        {products.length === 0 && (
+        {(!products || products.length === 0) && (
           <div className="text-center py-10 text-white/80">Menu Kosong</div>
         )}
-        {filtered.map((item) => {
+        {(filtered || []).map((item) => {
           const qty = cart[item.id]?.qty || 0;
           const soldOut = item.stock <= 0;
           const isExp = expandedProductId === item.id;
@@ -2041,6 +2153,8 @@ export default function App() {
                     {item.description}
                   </p>
                 </div>
+
+                {/* MENU BUTTONS SECTION */}
                 <div
                   className="flex justify-between items-end mt-2"
                   onClick={(e) => e.stopPropagation()}
@@ -2131,7 +2245,7 @@ export default function App() {
               </h1>
               {!activeAdmin && (
                 <p className="text-xs text-purple-100 font-medium">
-                  PO - Bazar Siswa Kreatif
+                  Bazar Siswa Kreatif
                 </p>
               )}
             </div>
@@ -2197,26 +2311,100 @@ export default function App() {
       {view === "general-admin" && renderGeneralAdmin()}
       {view === "admin" && renderStandAdmin()}
       {view === "checkout" && renderCheckout()}
+
+      {/* TAMPILAN INVOICE / SUCCESS (DIPERBARUI) */}
       {view === "success" && (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-          <div className="bg-white/40 p-8 rounded-3xl shadow-xl">
-            <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-purple-900">
-              Pesanan Diterima!
-            </h2>
-            <p className="text-gray-700 mb-6 font-medium">
-              Terima kasih telah berbelanja di Stand Bazar Kreatif Business Day
-              IGS.
-            </p>
+        <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 pb-24">
+          <div className="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 max-w-sm w-full relative">
+            <div className="flex flex-col items-center mb-6">
+              <CheckCircle className="w-16 h-16 text-green-500 mb-2" />
+              <h2 className="text-2xl font-bold text-purple-900">
+                Pesanan Berhasil!
+              </h2>
+              <p className="text-gray-600 text-sm text-center mt-1">
+                Terima kasih telah berbelanja di Stand Bazar Kreatif Business
+                Day IGS.
+              </p>
+              <p className="text-purple-600 text-xs text-center mt-1 font-bold">
+                Harap tunjukkan struk ini saat mengambil pesanan di stand.
+              </p>
+            </div>
+
+            {/* KARTU INVOICE / STRUK */}
+            {lastOrderInfo && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 shadow-inner relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-2 bg-purple-500"></div>
+                <p className="text-center text-xs font-bold text-gray-500 tracking-widest mb-2">
+                  INVOICE #{lastOrderInfo.id}
+                </p>
+                <div className="space-y-1 mb-4 border-b border-dashed border-gray-300 pb-3 text-sm">
+                  <p className="flex justify-between">
+                    <span className="text-gray-500">Pemesan:</span>{" "}
+                    <span className="font-bold text-gray-800">
+                      {lastOrderInfo.customer.name}
+                    </span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-gray-500">Kelas/Unit:</span>{" "}
+                    <span className="font-bold text-gray-800">
+                      {lastOrderInfo.customer.table}
+                    </span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-gray-500">Waktu:</span>{" "}
+                    <span className="text-gray-800">
+                      {lastOrderInfo.date.toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-gray-500">Metode:</span>{" "}
+                    <span className="font-bold text-gray-800">
+                      {lastOrderInfo.customer.payment === "transfer"
+                        ? "Transfer BSI"
+                        : "Cash"}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="space-y-2 mb-4 text-sm">
+                  {lastOrderInfo.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span className="text-gray-800">
+                        <span className="font-bold">{item.qty}x</span>{" "}
+                        {item.name}
+                      </span>
+                      <span className="font-medium text-gray-800">
+                        {formatRupiah(item.price * item.qty)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-dashed border-gray-300 pt-3 flex justify-between items-center">
+                  <span className="font-bold text-gray-800">TOTAL</span>
+                  <span className="font-extrabold text-purple-700 text-lg">
+                    {formatRupiah(lastOrderInfo.totalPrice)}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <button
-              onClick={() => setView("menu")}
-              className="mt-6 bg-purple-800 text-white px-6 py-2 rounded-xl font-bold"
+              onClick={() => {
+                setView("menu");
+                setLastOrderInfo(null);
+              }}
+              className="w-full bg-purple-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-purple-900 transition"
             >
               Kembali ke Menu
             </button>
           </div>
         </div>
       )}
+
       {view === "menu" && renderMenu()}
 
       {view === "menu" && getTotalItems() > 0 && (
