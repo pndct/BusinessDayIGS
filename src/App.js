@@ -93,7 +93,7 @@ const STAND_ADMINS = [
 const GENERAL_ADMIN = {
   username: "admin",
   password: "adminIGS2",
-  name: "Admin General (Kepala)",
+  name: "Admin General",
 };
 
 // --- DATA INITIAL SEEDING ---
