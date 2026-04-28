@@ -783,7 +783,7 @@ export default function App() {
             IGS Business Day
           </h1>
           <p className="text-lg text-purple-200 mt-2 font-light">
-            Bazar Siswa Kreatif
+            Healthy Bites, Happy Life
           </p>
         </div>
 
@@ -811,7 +811,9 @@ export default function App() {
           <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
-        <p className="text-xs text-white/30 mt-8">© 2025 Indo Global School</p>
+        <p className="text-xs text-white/30 mt-8">
+          © 2025 Islamic Global School
+        </p>
       </div>
     </div>
   );
@@ -2280,7 +2282,7 @@ export default function App() {
               </h1>
               {!activeAdmin && (
                 <p className="text-xs text-purple-100 font-medium">
-                  Bazar Siswa Kreatif
+                  Healthy Bites, Happy Life
                 </p>
               )}
             </div>
@@ -2357,11 +2359,11 @@ export default function App() {
                 Pesanan Berhasil!
               </h2>
               <p className="text-gray-600 text-sm text-center mt-1">
-                Terima kasih telah berbelanja di Stand Bazar Kreatif Business
-                Day IGS.
+                Terima kasih telah berbelanja di Business Day SD Islamic Global
+                School.
               </p>
               <p className="text-purple-600 text-xs text-center mt-1 font-bold">
-                Harap tunjukkan struk ini saat mengambil pesanan di stand.
+                Silahkan download untuk bukti Pemesanan.
               </p>
             </div>
 
@@ -2435,7 +2437,7 @@ export default function App() {
                   onClick={handleDownloadInvoice}
                   className="w-full bg-indigo-100 text-indigo-700 px-6 py-3 rounded-xl font-bold shadow-sm hover:bg-indigo-200 transition flex justify-center items-center gap-2"
                 >
-                  <DownloadCloud className="w-5 h-5" /> Download Struk (PNG)
+                  <DownloadCloud className="w-5 h-5" /> Download
                 </button>
               )}
               <button
