@@ -1323,7 +1323,7 @@ export default function App() {
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-6 text-white shadow-lg relative">
               <p className="text-slate-400 text-sm font-medium mb-1">
-                Total Omset Acara
+                Total Omset Pre Order
               </p>
               <h2 className="text-3xl font-bold tracking-tight">
                 {formatRupiah(grandTotalRevenue)}
@@ -1343,7 +1343,7 @@ export default function App() {
             </div>
 
             <h3 className="font-bold text-slate-800 mt-6 mb-2 flex items-center gap-2">
-              <PieChart className="w-5 h-5" /> Rincian Per Stand
+              <PieChart className="w-5 h-5" /> Rincian Per Stand Kelas
             </h3>
 
             <div className="space-y-3">
