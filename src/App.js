@@ -1323,7 +1323,7 @@ export default function App() {
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-6 text-white shadow-lg relative">
               <p className="text-slate-400 text-sm font-medium mb-1">
-                Total Omset Pre Order
+                Total Omset Acara
               </p>
               <h2 className="text-3xl font-bold tracking-tight">
                 {formatRupiah(grandTotalRevenue)}
@@ -1343,7 +1343,7 @@ export default function App() {
             </div>
 
             <h3 className="font-bold text-slate-800 mt-6 mb-2 flex items-center gap-2">
-              <PieChart className="w-5 h-5" /> Rincian Per Stand Kelas
+              <PieChart className="w-5 h-5" /> Rincian Per Stand
             </h3>
 
             <div className="space-y-3">
@@ -1798,7 +1798,7 @@ export default function App() {
           <div className="bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl space-y-4">
             <div className="text-center border-b pb-4 border-slate-100">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Total Pendapatan Kelas
+                Total Pendapatan Saya
               </p>
               <h2 className="text-3xl font-extrabold text-green-600 mt-1">
                 {formatRupiah(totalRevenue)}
@@ -2164,16 +2164,16 @@ export default function App() {
               </div>
               <div className="flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-start gap-2">
                     <h3
-                      className={`font-bold text-gray-900 ${
-                        isExp ? "text-xl" : "text-sm line-clamp-1"
+                      className={`font-bold text-gray-900 leading-snug ${
+                        isExp ? "text-xl" : "text-sm line-clamp-2"
                       }`}
                     >
                       {item.name}
                     </h3>
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full h-fit font-bold ${
+                      className={`shrink-0 mt-0.5 text-[10px] px-2 py-0.5 rounded-full h-fit font-bold ${
                         item.stock < 5
                           ? "bg-red-100 text-red-700"
                           : "bg-green-100 text-green-700"
@@ -2183,7 +2183,7 @@ export default function App() {
                     </span>
                   </div>
                   <p
-                    className={`text-xs text-gray-800 mt-1 ${
+                    className={`text-xs text-gray-800 mt-1 whitespace-pre-wrap ${
                       isExp ? "" : "line-clamp-2"
                     }`}
                   >
@@ -2359,11 +2359,11 @@ export default function App() {
                 Pesanan Berhasil!
               </h2>
               <p className="text-gray-600 text-sm text-center mt-1">
-                Terima kasih telah berbelanja di Business Day SD Islamic Global
-                School.
+                Terima kasih telah berbelanja di Stand Pre Order Business Day SD
+                IGS.
               </p>
               <p className="text-purple-600 text-xs text-center mt-1 font-bold">
-                Silahkan download untuk bukti Pemesanan.
+                Silahkan download struk sebagai bukti pemesanan.
               </p>
             </div>
 
@@ -2437,7 +2437,7 @@ export default function App() {
                   onClick={handleDownloadInvoice}
                   className="w-full bg-indigo-100 text-indigo-700 px-6 py-3 rounded-xl font-bold shadow-sm hover:bg-indigo-200 transition flex justify-center items-center gap-2"
                 >
-                  <DownloadCloud className="w-5 h-5" /> Download
+                  <DownloadCloud className="w-5 h-5" /> Download Struk
                 </button>
               )}
               <button
