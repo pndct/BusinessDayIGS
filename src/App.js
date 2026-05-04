@@ -2351,14 +2351,14 @@ export default function App() {
               {lastOrderInfo?.customer?.payment === "transfer" && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-3 mb-1 w-full text-center">
                   <p className="text-red-600 text-xs font-bold">
-                    ⚠️ Jangan lupa kirim bukti transfer ke WA Admin agar pesanan
-                    diproses.
+                    ⚠️ Jangan lupa kirim bukti transfer ke WA 085805861994
+                    terimakasih.
                   </p>
                 </div>
               )}
 
               <p className="text-purple-600 text-xs text-center mt-2 font-bold">
-                Harap tunjukkan struk ini saat mengambil pesanan di stand.
+                Silahkan simpan struk sebagai bukti pembelian.
               </p>
             </div>
 
