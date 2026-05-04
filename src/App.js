@@ -45,6 +45,7 @@ import {
   Eye,
   EyeOff,
   DownloadCloud,
+  MessageCircle,
 } from "lucide-react";
 import { initializeApp } from "firebase/app";
 import {
@@ -82,22 +83,22 @@ const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
 
 // --- KONFIGURASI ADMIN ---
 const STAND_ADMINS = [
-  { username: "admin1", password: "kelas1", name: "Admin Kelas 1" },
-  { username: "admin2", password: "kelas2", name: "Admin Kelas 2" },
-  { username: "admin3", password: "kelas3", name: "Admin Kelas 3" },
-  { username: "admin4", password: "kelas4", name: "Admin Kelas 4" },
-  { username: "admin5", password: "kelas5", name: "Admin Kelas 5" },
-  { username: "admin6", password: "kelas6", name: "Admin Kelas 6" },
+  { username: "admin1", password: "kelas1", name: "Admin Stand 1" },
+  { username: "admin2", password: "kelas2", name: "Admin Stand 2" },
+  { username: "admin3", password: "kelas3", name: "Admin Stand 3" },
+  { username: "admin4", password: "kelas4", name: "Admin Stand 4" },
+  { username: "admin5", password: "kelas5", name: "Admin Stand 5" },
+  { username: "admin6", password: "kelas6", name: "Admin Stand 6" },
 ];
 
 const GENERAL_ADMIN = {
   username: "admin",
   password: "adminIGS2",
-  name: "Admin General",
+  name: "Admin General (Kepala)",
 };
 
 // --- DATA INITIAL SEEDING ---
-const INITIAL_CLASSES_DATA = Array.from({ length: 20 }, (_, i) => ({
+const INITIAL_CLASSES_DATA = Array.from({ length: 12 }, (_, i) => ({
   id: `class_${i + 1}`,
   name: `Kelas ${i + 1}`,
   order: i + 1,
@@ -490,8 +491,6 @@ export default function App() {
     if (orderType === "siswa" && (!selectedClassId || !selectedStudent))
       return alert("Pilih Kelas & Siswa");
     if (orderType === "guru" && !teacherName) return alert("Isi Nama");
-    if (paymentMethod === "transfer" && !transferProof)
-      return alert("Upload bukti transfer");
 
     setIsSubmitting(true);
     const className =
@@ -501,7 +500,7 @@ export default function App() {
       name: orderType === "siswa" ? selectedStudent : teacherName,
       table: orderType === "siswa" ? className : `Guru - ${teacherUnit}`,
       payment: paymentMethod,
-      transferProof: paymentMethod === "transfer" ? transferProof : null,
+      transferProof: null,
       notes: orderNotes,
     };
 
@@ -2000,11 +1999,11 @@ export default function App() {
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-mono font-bold tracking-tight">
-                    7130906502
+                      7218181818
                     </p>
                     <button
                       type="button"
-                      onClick={() => copyToClipboard("7130906502")}
+                      onClick={() => copyToClipboard("7218181818")}
                       className="bg-blue-100 p-1.5 rounded-lg hover:bg-blue-200 text-blue-700 transition"
                       title="Salin No Rek"
                     >
@@ -2012,7 +2011,7 @@ export default function App() {
                     </button>
                   </div>
                   <p className="text-xs opacity-70 mt-1">
-                    a.n Dede Warlina
+                    a.n IGS Business Day
                   </p>
                 </div>
                 <div className="bg-white p-1 rounded">
@@ -2032,34 +2031,20 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* UPLOAD BUKTI TRANSFER */}
-                <div className="mt-2">
-                  <label className="block text-xs font-bold text-blue-800 mb-1">
-                    Upload Bukti Transfer
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="transfer-proof-upload"
-                    />
-                    <label
-                      htmlFor="transfer-proof-upload"
-                      className="flex items-center justify-center gap-2 w-full p-2 bg-white border border-blue-300 border-dashed rounded-lg cursor-pointer hover:bg-blue-50 transition text-sm text-blue-600"
-                    >
-                      <Upload className="w-4 h-4" />{" "}
-                      {transferProof ? "Ganti Foto" : "Pilih Foto"}
-                    </label>
-                  </div>
-                  {transferProof && (
-                    <img
-                      src={transferProof}
-                      className="h-20 w-auto rounded border border-blue-200 mt-2 mx-auto cursor-pointer"
-                      onClick={() => setPreviewImage(transferProof)}
-                    />
-                  )}
+                {/* KIRIM BUKTI VIA WA */}
+                <div className="mt-2 bg-blue-100/50 p-3 rounded-lg border border-blue-200">
+                  <p className="text-xs font-bold text-blue-800 mb-2">
+                    Setelah transfer, wajib kirim bukti ke WhatsApp Admin:
+                  </p>
+                  <a
+                    href={`https://wa.me/6285805861994?text=Assalamualaikum%20Ms,%20saya%20ingin%20mengirimkan%20bukti%20transfer%20`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm font-bold shadow-sm"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Kirim Bukti via WA
+                  </a>
+                  <p className="text-[10px] text-blue-600 mt-2 text-center italic"></p>
                 </div>
               </div>
             </div>
@@ -2359,11 +2344,21 @@ export default function App() {
                 Pesanan Berhasil!
               </h2>
               <p className="text-gray-600 text-sm text-center mt-1">
-                Terima kasih telah berbelanja di Stand Pre Order Business Day SD
-                IGS.
+                Terima kasih telah berbelanja di Stand Bazar Kreatif Business
+                Day IGS.
               </p>
-              <p className="text-purple-600 text-xs text-center mt-1 font-bold">
-                Silahkan download struk sebagai bukti pemesanan.
+
+              {lastOrderInfo?.customer?.payment === "transfer" && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-3 mb-1 w-full text-center">
+                  <p className="text-red-600 text-xs font-bold">
+                    ⚠️ Jangan lupa kirim bukti transfer ke WA Admin agar pesanan
+                    diproses.
+                  </p>
+                </div>
+              )}
+
+              <p className="text-purple-600 text-xs text-center mt-2 font-bold">
+                Harap tunjukkan struk ini saat mengambil pesanan di stand.
               </p>
             </div>
 
@@ -2437,7 +2432,7 @@ export default function App() {
                   onClick={handleDownloadInvoice}
                   className="w-full bg-indigo-100 text-indigo-700 px-6 py-3 rounded-xl font-bold shadow-sm hover:bg-indigo-200 transition flex justify-center items-center gap-2"
                 >
-                  <DownloadCloud className="w-5 h-5" /> Download Struk
+                  <DownloadCloud className="w-5 h-5" /> Download Struk (PNG)
                 </button>
               )}
               <button
