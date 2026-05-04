@@ -2033,7 +2033,7 @@ export default function App() {
                 <div className="mt-2 bg-blue-100/50 p-3 rounded-lg border border-blue-200">
                   <p className="text-xs font-bold text-blue-800 mb-2">
                     Setelah transfer, silahkan kirim bukti ke WhatsApp
-                    085805861994:
+                    085805861994 atau tombol dibawah ini:
                   </p>
                   <a
                     href={`https://wa.me/6285805861994?text=Assalamualaikum%20Ms,%20saya%20ingin%20mengirimkan%20bukti%20transfer%20`}
