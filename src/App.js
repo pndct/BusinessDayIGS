@@ -1999,20 +1999,18 @@ export default function App() {
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-mono font-bold tracking-tight">
-                      7218181818
+                      7130906502
                     </p>
                     <button
                       type="button"
-                      onClick={() => copyToClipboard("7218181818")}
+                      onClick={() => copyToClipboard("7130906502")}
                       className="bg-blue-100 p-1.5 rounded-lg hover:bg-blue-200 text-blue-700 transition"
                       title="Salin No Rek"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-xs opacity-70 mt-1">
-                    a.n IGS Business Day
-                  </p>
+                  <p className="text-xs opacity-70 mt-1">a.n Dede Warlina</p>
                 </div>
                 <div className="bg-white p-1 rounded">
                   <img
@@ -2034,7 +2032,8 @@ export default function App() {
                 {/* KIRIM BUKTI VIA WA */}
                 <div className="mt-2 bg-blue-100/50 p-3 rounded-lg border border-blue-200">
                   <p className="text-xs font-bold text-blue-800 mb-2">
-                    Setelah transfer, wajib kirim bukti ke WhatsApp Admin:
+                    Setelah transfer, silahkan kirim bukti ke WhatsApp
+                    085805861994:
                   </p>
                   <a
                     href={`https://wa.me/6285805861994?text=Assalamualaikum%20Ms,%20saya%20ingin%20mengirimkan%20bukti%20transfer%20`}
