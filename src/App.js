@@ -2000,11 +2000,11 @@ export default function App() {
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-mono font-bold tracking-tight">
-                      7218181818
+                    7130906502
                     </p>
                     <button
                       type="button"
-                      onClick={() => copyToClipboard("7218181818")}
+                      onClick={() => copyToClipboard("7130906502")}
                       className="bg-blue-100 p-1.5 rounded-lg hover:bg-blue-200 text-blue-700 transition"
                       title="Salin No Rek"
                     >
@@ -2012,7 +2012,7 @@ export default function App() {
                     </button>
                   </div>
                   <p className="text-xs opacity-70 mt-1">
-                    a.n IGS Business Day
+                    a.n Dede Warlina
                   </p>
                 </div>
                 <div className="bg-white p-1 rounded">
