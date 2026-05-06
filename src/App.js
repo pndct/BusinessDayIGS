@@ -106,6 +106,25 @@ const INITIAL_CLASSES_DATA = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 export default function App() {
+  const maintenance = true;
+
+  if (maintenance) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "column",
+          fontFamily: "Arial",
+        }}
+      >
+        <h1>Website Sedang Maintenance</h1>
+        <p>Silakan kembali lagi nanti.</p>
+      </div>
+    );
+  }
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState({});
   const [view, setView] = useState("landing");
