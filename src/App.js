@@ -113,15 +113,60 @@ export default function App() {
       <div
         style={{
           height: "100vh",
+          background: "linear-gradient(135deg, #4f46e5, #9333ea)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           flexDirection: "column",
+          color: "white",
           fontFamily: "Arial",
+          textAlign: "center",
+          padding: "20px",
+          overflow: "hidden",
         }}
       >
-        <h1>Website Sedang Maintenance</h1>
-        <p>Silakan kembali lagi nanti.</p>
+        <div
+          style={{
+            width: "90px",
+            height: "90px",
+            border: "8px solid rgba(255,255,255,0.3)",
+            borderTop: "8px solid white",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            marginBottom: "30px",
+          }}
+        />
+
+        <h1
+          style={{
+            fontSize: "42px",
+            marginBottom: "15px",
+            fontWeight: "bold",
+          }}
+        >
+          Business Day SD IGS Sedang Tutup
+        </h1>
+
+        <p
+          style={{
+            fontSize: "20px",
+            maxWidth: "600px",
+            lineHeight: "1.6",
+            opacity: 0.95,
+          }}
+        >
+          Pre Order saat ini telah ditutup. <br />
+          Silakan kembali lagi saat Business Day dibuka ✨
+        </p>
+
+        <style>
+          {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+        </style>
       </div>
     );
   }
