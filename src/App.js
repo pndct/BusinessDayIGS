@@ -113,57 +113,131 @@ export default function App() {
       <div
         style={{
           height: "100vh",
-          background: "linear-gradient(135deg, #4f46e5, #9333ea)",
+          background:
+            "linear-gradient(135deg, #ff9a9e 0%, #fad0c4 25%, #a18cd1 60%, #6dd5ed 100%)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           flexDirection: "column",
-          color: "white",
-          fontFamily: "Arial",
+          overflow: "hidden",
+          position: "relative",
+          fontFamily: "Poppins, Arial, sans-serif",
           textAlign: "center",
           padding: "20px",
-          overflow: "hidden",
         }}
       >
+        {/* Bintang */}
+        <div className="stars">
+          {[...Array(50)].map((_, i) => (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                width: `${2 + Math.random() * 4}px`,
+                height: `${2 + Math.random() * 4}px`,
+                background: "white",
+                borderRadius: "50%",
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                opacity: Math.random(),
+                animation: `twinkle ${
+                  2 + Math.random() * 4
+                }s infinite alternate`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Lebah */}
+        <div className="bee">🐝</div>
+
+        {/* Card Tengah */}
         <div
           style={{
-            width: "90px",
-            height: "90px",
-            border: "8px solid rgba(255,255,255,0.3)",
-            borderTop: "8px solid white",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            marginBottom: "30px",
-          }}
-        />
-
-        <h1
-          style={{
-            fontSize: "42px",
-            marginBottom: "15px",
-            fontWeight: "bold",
+            background: "rgba(255,255,255,0.15)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: "30px",
+            padding: "45px 55px",
+            maxWidth: "650px",
+            zIndex: 2,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
           }}
         >
-          Business Day SD IGS Sedang Tutup
-        </h1>
+          <h1
+            style={{
+              color: "white",
+              fontSize: "42px",
+              fontWeight: "700",
+              marginBottom: "18px",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Business Day Sedang Tutup
+          </h1>
 
-        <p
-          style={{
-            fontSize: "20px",
-            maxWidth: "600px",
-            lineHeight: "1.6",
-            opacity: 0.95,
-          }}
-        >
-          Pre Order saat ini telah ditutup. <br />
-          Silakan kembali lagi saat Business Day dibuka ✨
-        </p>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.95)",
+              fontSize: "19px",
+              lineHeight: "1.8",
+              fontWeight: "300",
+            }}
+          >
+            Pre Order saat ini telah ditutup.
+            <br />
+            Silakan kembali lagi saat Business Day dibuka ✨
+          </p>
+        </div>
 
         <style>
           {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+          .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+          }
+
+          @keyframes twinkle {
+            from {
+              opacity: 0.2;
+              transform: scale(1);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1.8);
+            }
+          }
+
+          .bee {
+            position: absolute;
+            font-size: 60px;
+            z-index: 3;
+            animation: fly 12s ease-in-out infinite;
+          }
+
+          @keyframes fly {
+            0% {
+              transform: translate(-600px, 150px) rotate(0deg);
+            }
+            20% {
+              transform: translate(-250px, -120px) rotate(10deg);
+            }
+            40% {
+              transform: translate(50px, 80px) rotate(-8deg);
+            }
+            60% {
+              transform: translate(300px, -100px) rotate(12deg);
+            }
+            80% {
+              transform: translate(550px, 120px) rotate(-6deg);
+            }
+            100% {
+              transform: translate(900px, -80px) rotate(0deg);
+            }
           }
         `}
         </style>
