@@ -106,7 +106,7 @@ const INITIAL_CLASSES_DATA = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 export default function App() {
-  const maintenance = false;
+  const maintenance = true;
 
   if (maintenance) {
     return (
