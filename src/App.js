@@ -173,7 +173,7 @@ export default function App() {
               letterSpacing: "0.5px",
             }}
           >
-            Business Day Sedang Tutup
+            Business Day Tutup
           </h1>
 
           <p
@@ -184,9 +184,9 @@ export default function App() {
               fontWeight: "300",
             }}
           >
-            Pre Order saat ini telah ditutup.
+            Terima Kasih telah Berpartisipasi ikut membeli Produk.
             <br />
-            Silakan kembali lagi saat Business Day dibuka ✨
+            Silakan kembali lagi Tahun Depan ✨
           </p>
         </div>
 
